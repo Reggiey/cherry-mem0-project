@@ -1,0 +1,21 @@
+services:
+  - type: web # 这是一个 web 服务
+    name: mem0-mcp-server # 服务的名字
+    env: python # 使用 Python 环境
+    plan: free # 使用免费套餐
+    
+    # 定义持久化磁盘
+    disks:
+      - name: mem0-data # 磁盘名字
+        mountPath: /var/data # 挂载到容器的哪个路径
+        sizeGB: 1 # 磁盘大小 (1GB 足够了)
+        
+    # 如何构建项目
+    buildCommand: "pip install -r requirements.txt"
+    
+    # 如何启动项目
+    startCommand: "uvicorn mcp_server:app --host 0.0.0.0 --port 10000"
+    
+    # 健康检查，确保服务正常运行
+    healthCheckPath: /docs
+
