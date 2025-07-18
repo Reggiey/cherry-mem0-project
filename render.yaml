@@ -1,3 +1,5 @@
+# render.yaml (已修正版本)
+
 services:
   - type: web # 这是一个 web 服务
     name: mem0-mcp-server # 服务的名字
@@ -18,4 +20,3 @@ services:
     
     # 健康检查，确保服务正常运行
     healthCheckPath: /docs
-
