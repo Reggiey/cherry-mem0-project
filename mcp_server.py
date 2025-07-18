@@ -20,12 +20,21 @@ class Mem0MCPComponent:
         # --- 免费套餐的妥协方案 ---
         # Render 免费套餐没有持久化磁盘，我们使用 /tmp 目录。
         # 警告：/tmp 目录下的所有数据会在服务重启或休眠后丢失！
-        # 这意味着记忆不是真正的“长期”记忆。
-        storage_path = "/tmp/mem0_storage"  # <-- 关键修改在这里
+        storage_path = "/tmp/mem0_storage"
         os.makedirs(storage_path, exist_ok=True)
         
         print(f"💾 Using TEMPORARY storage at: {storage_path}. Data will be lost on restart.")
-        self.mem0 = Memory(vector_store_path=storage_path)
+
+        # --- 关键修改：使用配置字典来初始化 Memory ---
+        config = {
+            "vector_store": {
+                "provider": "qdrant",  # mem0 默认的本地存储提供商
+                "config": {
+                    "path": storage_path # 在这里指定路径
+                }
+            }
+        }
+        self.mem0 = Memory(config=config) # 正确的初始化方式
         
         self.state = MCPState()
         print("✅ Mem0 MCP Component Initialized (in temporary mode).")
@@ -54,6 +63,7 @@ class Mem0MCPComponent:
                 content = payload.get("content")
                 if not content:
                     raise HTTPException(status_code=400, detail={"error": "Missing 'content' in payload for 'add' action."})
+                # 在新版 mem0 中, add 方法返回添加的记忆对象，我们可以忽略它
                 self.mem0.add(content=content, user_id=user_id)
                 return {"result": "Memory added successfully (temporarily)."}
 
@@ -87,5 +97,8 @@ def invoke_endpoint(invoke_data: InvokePayload):
     return component.invoke(invoke_data)
 
 # --- Run the server ---
+# 在Render这样的生产环境中，我们依赖 Gunicorn/Uvicorn worker，所以这部分代码不会被执行
+# 但保留它对于本地测试是好的
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)
+
