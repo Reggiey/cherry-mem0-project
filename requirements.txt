@@ -53,8 +53,7 @@ kiwisolver==1.4.8
 magika==0.6.2
 markdown-it-py==3.0.0
 markdownify==1.1.0
-# Editable install with no version control (markitdown==0.1.2)
--e /Users/manyfish/Downloads/markitdown/packages/markitdown
+markitdown==0.1.2
 MarkupSafe==2.1.5
 matplotlib==3.10.1
 mdurl==0.1.2
