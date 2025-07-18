@@ -1,22 +1,14 @@
-# render.yaml (最终修正版)
+# render.yaml (100% 修正版)
 
 services:
-  # 这里定义我们的 Web 服务
+  # 注意：下面所有属性都比 '-' 多了两个空格的缩进
   - type: web
     name: mem0-mcp-server
     env: python
-    plan: free # 使用免费套餐
-    
-    # 构建项目的命令
+    plan: free
     buildCommand: "pip install -r requirements.txt"
-    
-    # 启动项目的命令
     startCommand: "uvicorn mcp_server:app --host 0.0.0.0 --port 10000"
-    
-    # 健康检查，确保服务正常运行
     healthCheckPath: /docs
-    
-    # 定义持久化磁盘 (注意这里的缩进)
     disks:
       - name: mem0-data
         mountPath: /var/data
