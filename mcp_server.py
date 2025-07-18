@@ -1,8 +1,9 @@
 # mcp_server.py
+import os  # <-- 修正 #2：添加缺失的 import
 from fastapi import FastAPI, Body, HTTPException
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional
-from mem0 import Mem0
+from mem0 import Memory
 import uvicorn
 
 # --- Pydantic Models for Type Safety ---
@@ -10,7 +11,7 @@ class MCPState(BaseModel):
     user_id: Optional[str] = None
 
 class InvokePayload(BaseModel):
-    action: str  # "add", "search", "get_all"
+    action: str  # "add", "search"
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 # --- The Core MCP Component Logic ---
@@ -22,7 +23,8 @@ class Mem0MCPComponent:
         os.makedirs(storage_path, exist_ok=True)
         
         print(f"💾 Using persistent storage at: {storage_path}")
-        self.mem0 = Mem0(vector_store_path=storage_path) # 指定数据库路径
+        # <-- 修正 #1：使用正确的类名 Memory
+        self.mem0 = Memory(vector_store_path=storage_path)
         
         self.state = MCPState()
         print("✅ Mem0 MCP Component Initialized.")
@@ -86,7 +88,7 @@ def invoke_endpoint(invoke_data: InvokePayload):
 
 # --- Run the server ---
 if __name__ == "__main__":
-    # 我们将服务器运行在 8001 端口
+    # 我们将服务器运行在 8001 端口，Render会自动处理端口映射
+    # 你在Render服务设置里的端口也应该是 8001
     uvicorn.run(app, host="0.0.0.0", port=8001)
-
 
