@@ -1,15 +1,15 @@
-# render.yaml (100% 修正版)
+# 解决方法 B: 移除磁盘，保持免费 (推荐)
 
 services:
-  # 注意：下面所有属性都比 '-' 多了两个空格的缩进
   - type: web
     name: mem0-mcp-server
     env: python
-    plan: free
+    plan: free # 保持免费
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn mcp_server:app --host 0.0.0.0 --port 10000"
     healthCheckPath: /docs
-    disks:
-      - name: mem0-data
-        mountPath: /var/data
-        sizeGB: 1
+    # <<<< 下面关于 disks 的整个部分都删掉 >>>>
+    # disks:
+    #   - name: mem0-data
+    #     mountPath: /var/data
+    #     sizeGB: 1
