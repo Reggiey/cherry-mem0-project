@@ -5,6 +5,21 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional
 from mem0 import Memory
 import uvicorn
+from types import SimpleNamespace # <-- 关键导入！
+
+# --- 辅助函数：将字典递归转换为 SimpleNamespace 对象 ---
+def dict_to_namespace(d):
+    """
+    Recursively converts a dictionary to a SimpleNamespace object.
+    This allows attribute access (e.g., config.key) instead of item access (e.g., config['key']).
+    """
+    if not isinstance(d, dict):
+        return d
+    
+    # 递归转换所有嵌套的字典
+    converted_dict = {k: dict_to_namespace(v) for k, v in d.items()}
+    
+    return SimpleNamespace(**converted_dict)
 
 # --- Pydantic Models for Type Safety ---
 class MCPState(BaseModel):
@@ -17,26 +32,32 @@ class InvokePayload(BaseModel):
 # --- The Core MCP Component Logic ---
 class Mem0MCPComponent:
     def __init__(self):
-        # --- Temporary storage for Render's free tier ---
         storage_path = "/tmp/mem0_storage"
         os.makedirs(storage_path, exist_ok=True)
         
         print(f"💾 Using TEMPORARY storage at: {storage_path}. Data will be lost on restart.")
 
-        # --- FINAL FIX: The config key must be at the top level ---
-        config = {
+        # --- 根本性修复：创建一个字典，然后将其转换为对象 ---
+        # 这是我们原始的配置字典
+        config_dict = {
             "vector_store": {
                 "provider": "qdrant",
                 "config": {
                     "path": storage_path
                 }
             },
-            "custom_fact_extraction_prompt": None # Corrected position of the key
+            "custom_fact_extraction_prompt": None
         }
-        self.mem0 = Memory(config=config)
+        
+        # 将字典转换为 mem0 库需要的对象格式
+        config_object = dict_to_namespace(config_dict)
+        
+        # 将转换后的对象传递给 Memory
+        print("🔧 Passing configuration object to mem0 library...")
+        self.mem0 = Memory(config=config_object)
         
         self.state = MCPState()
-        print("✅ Mem0 MCP Component Initialized (in temporary mode).")
+        print("✅ Mem0 MCP Component Initialized successfully!")
 
     def get_state(self) -> MCPState:
         print(f"➡️ Getting state: {self.state.dict()}")
