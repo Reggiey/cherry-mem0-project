@@ -5,20 +5,16 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional
 from mem0 import Memory
 import uvicorn
-from types import SimpleNamespace # <-- 关键导入！
+from types import SimpleNamespace
 
 # --- 辅助函数：将字典递归转换为 SimpleNamespace 对象 ---
 def dict_to_namespace(d):
     """
     Recursively converts a dictionary to a SimpleNamespace object.
-    This allows attribute access (e.g., config.key) instead of item access (e.g., config['key']).
     """
     if not isinstance(d, dict):
         return d
-    
-    # 递归转换所有嵌套的字典
     converted_dict = {k: dict_to_namespace(v) for k, v in d.items()}
-    
     return SimpleNamespace(**converted_dict)
 
 # --- Pydantic Models for Type Safety ---
@@ -26,7 +22,7 @@ class MCPState(BaseModel):
     user_id: Optional[str] = None
 
 class InvokePayload(BaseModel):
-    action: str  # "add", "search"
+    action: str
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 # --- The Core MCP Component Logic ---
@@ -37,8 +33,7 @@ class Mem0MCPComponent:
         
         print(f"💾 Using TEMPORARY storage at: {storage_path}. Data will be lost on restart.")
 
-        # --- 根本性修复：创建一个字典，然后将其转换为对象 ---
-        # 这是我们原始的配置字典
+        # --- 最终极修复：定义一个包含所有可选键的完整配置字典 ---
         config_dict = {
             "vector_store": {
                 "provider": "qdrant",
@@ -46,18 +41,23 @@ class Mem0MCPComponent:
                     "path": storage_path
                 }
             },
-            "custom_fact_extraction_prompt": None
+            # 把所有库可能检查的属性都预先设置为 None，以避免 AttributeError
+            "llm": None,
+            "embedder": None,
+            "history_manager": None,
+            "custom_fact_extraction_prompt": None,
+            "custom_update_memory_prompt": None, # 导致新错误的那一个
+            "custom_summarization_prompt": None, # 其他可能存在的
         }
         
         # 将字典转换为 mem0 库需要的对象格式
         config_object = dict_to_namespace(config_dict)
         
-        # 将转换后的对象传递给 Memory
-        print("🔧 Passing configuration object to mem0 library...")
+        print("🔧 Passing a COMPLETE configuration object to mem0 library...")
         self.mem0 = Memory(config=config_object)
         
         self.state = MCPState()
-        print("✅ Mem0 MCP Component Initialized successfully!")
+        print("✅✅✅ Mem0 MCP Component Initialized SUCCESSFULLY!")
 
     def get_state(self) -> MCPState:
         print(f"➡️ Getting state: {self.state.dict()}")
