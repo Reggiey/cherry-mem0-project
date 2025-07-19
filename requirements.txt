@@ -128,3 +128,5 @@ urllib3==2.3.0
 uvicorn==0.34.0
 websockets==15.0.1
 yt-dlp==2025.6.9
+openai  # <-- 新增
+tiktoken # <-- 新增
