@@ -7,7 +7,7 @@ from mem0 import Memory
 import uvicorn
 from types import SimpleNamespace
 
-# 辅助函数依然需要，因为 vector_store 内部还是嵌套的
+# --- This helper is still needed for the nested vector_store config ---
 def dict_to_namespace(d):
     if not isinstance(d, dict):
         return d
@@ -27,29 +27,36 @@ class Mem0MCPComponent:
     def __init__(self):
         storage_path = "/tmp/mem0_storage"
         os.makedirs(storage_path, exist_ok=True)
-        
         print(f"💾 Using TEMPORARY storage at: {storage_path}.")
 
-        # --- 终极方案：只提供必需的配置，让库处理其他所有默认值 ---
+        # --- THE DEFINITIVE CONFIGURATION ---
+        # This configuration satisfies all of the library's initialization quirks:
+        # 1. Provides `vector_store` for our custom path.
+        # 2. PROVIDES the `custom_..._prompt` keys as `None` to prevent the first type of AttributeError.
+        # 3. OMITS `llm` and `embedder` keys entirely, so the library creates its own defaults
+        #    instead of crashing on `None.provider`.
         config_dict = {
             "vector_store": {
                 "provider": "qdrant",
                 "config": {
                     "path": storage_path
                 }
-            }
+            },
+            # These keys MUST exist, even if they are None.
+            "custom_fact_extraction_prompt": None,
+            "custom_update_memory_prompt": None,
+            "custom_summarization_prompt": None,
         }
         
         config_object = dict_to_namespace(config_dict)
         
-        print("🔧 Passing MINIMAL config, letting mem0 use its defaults...")
-        # 你需要设置你的 OpenAI API 密钥作为环境变量
-        # 在 Render.com 的 Environment 选项卡中，添加一个环境变量
-        # Key: OPENAI_API_KEY
-        # Value: sk-YourActualApiKey
-        if not os.getenv("OPENAI_API_KEY"):
-            print("⚠️ WARNING: OPENAI_API_KEY environment variable not set. Default mem0 LLM may fail.")
+        print("🔧 Passing the definitive 'hybrid' config to mem0...")
 
+        # Reminder: You still need the OPENAI_API_KEY environment variable in Render
+        # for the default LLM and embedder to work.
+        if not os.getenv("OPENAI_API_KEY"):
+            print("⚠️ WARNING: OPENAI_API_KEY env var not set. mem0 will likely fail.")
+        
         self.mem0 = Memory(config=config_object)
         
         self.state = MCPState()
@@ -74,15 +81,14 @@ class Mem0MCPComponent:
             if action == "add":
                 content = payload.get("content")
                 if not content:
-                    raise HTTPException(status_code=400, detail={"error": "Missing 'content' in payload for 'add' action."})
-                # 注意：mem0 的 add 方法现在可能会调用 LLM 进行事实提取
+                    raise HTTPException(status_code=400, detail={"error": "Missing 'content'."})
                 self.mem0.add(content=content, user_id=user_id)
-                return {"result": "Memory added successfully (temporarily)."}
+                return {"result": "Memory added successfully."}
 
             elif action == "search":
                 query = payload.get("query")
                 if not query:
-                    raise HTTPException(status_code=400, detail={"error": "Missing 'query' in payload for 'search' action."})
+                    raise HTTPException(status_code=400, detail={"error": "Missing 'query'."})
                 results = self.mem0.search(query=query, user_id=user_id)
                 return {"result": results}
 
