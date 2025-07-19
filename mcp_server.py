@@ -17,14 +17,13 @@ class InvokePayload(BaseModel):
 # --- The Core MCP Component Logic ---
 class Mem0MCPComponent:
     def __init__(self):
-        # --- 免费套餐的妥协方案 ---
-        # 使用 /tmp 目录，数据会在服务重启或休眠后丢失！
+        # --- Temporary storage for Render's free tier ---
         storage_path = "/tmp/mem0_storage"
         os.makedirs(storage_path, exist_ok=True)
         
         print(f"💾 Using TEMPORARY storage at: {storage_path}. Data will be lost on restart.")
 
-        # --- 关键修改：提供库需要的额外配置项 ---
+        # --- FINAL FIX: The config key must be at the top level ---
         config = {
             "vector_store": {
                 "provider": "qdrant",
@@ -32,11 +31,9 @@ class Mem0MCPComponent:
                     "path": storage_path
                 }
             },
-            "llm": {
-                "custom_fact_extraction_prompt": None # 满足库的内部检查
-            }
+            "custom_fact_extraction_prompt": None # Corrected position of the key
         }
-        self.mem0 = Memory(config=config) # 正确的初始化方式
+        self.mem0 = Memory(config=config)
         
         self.state = MCPState()
         print("✅ Mem0 MCP Component Initialized (in temporary mode).")
