@@ -1,15 +1,24 @@
-# 解决方法 B: 移除磁盘，保持免费 (推荐)
+# render.yaml
+# 更新后的配置文件，明确指定了 Python 版本
 
 services:
   - type: web
     name: mem0-mcp-server
     env: python
-    plan: free # 保持免费
+    plan: free # 保持免费套餐
+    
+    # VVVVVV 这是我们添加的最关键的一行 VVVVVV
+    pythonVersion: "3.12.3"
+    
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn mcp_server:app --host 0.0.0.0 --port 10000"
+    
+    # 建议使用 Render 提供的 $PORT 环境变量，这是更标准和可靠的做法
+    startCommand: "uvicorn mcp_server:app --host 0.0.0.0 --port $PORT"
+    
     healthCheckPath: /docs
-    # <<<< 下面关于 disks 的整个部分都删掉 >>>>
-    # disks:
-    #   - name: mem0-data
-    #     mountPath: /var/data
-    #     sizeGB: 1
+    
+    # 确保你的 OPENAI_API_KEY 仍然在 Render 网站的 Environment 页面设置好
+    # 这段代码是告诉 Render 从网页设置中读取这个密钥
+    envVars:
+      - key: OPENAI_API_KEY
+        fromSync: false
