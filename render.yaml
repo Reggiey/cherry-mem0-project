@@ -1,7 +1,6 @@
 services:
   - type: web
     name: mem0-mcp-server
-    plan: free
     env: python
     pythonVersion: "3.12.3"
     buildCommand: "pip install -r requirements.txt"
